@@ -11,34 +11,16 @@ let Modal = {
 
 }
 
-const transactions = [
-    {
-        id: 1,
-        description: 'Luz',
-        amount: -50000,
-        date: '23/01/2021'
-    },
-
-    {
-        id: 2,
-        description: 'Website',
-        amount: 500000,
-        date: '23/01/2021'
-    },
-
-    {
-        id: 3,
-        description: 'Internet',
-        amount: -20000,
-        date: '23/01/2021'
-    }
-]
-
 const Transaction = {
-    all: transactions,
+    all: [],
 
-    add(transaction){
+    add(transaction) {
         Transaction.all.push(transaction)
+        App.reload()
+    },
+
+    remove(index) {
+        Transaction.all.splice(index, 1)
         App.reload()
     },
 
@@ -82,8 +64,8 @@ const DOM = {
         const html = `
                     
             <td class="description">${transaction.description}</td>
-            <td class="${CSSclass}">- R$ ${transaction.date}</td>
-            <td class="date">${amount}</td>
+            <td class="${CSSclass}">${amount}</td>
+            <td class="date">${transaction.date}</td>
             <td><img src="./assets/minus.svg" alt="Remover transação"></td>
 
         `
@@ -102,12 +84,13 @@ const DOM = {
             .getElementById('totalDisplay')
             .innerHTML = Utils.formatCurrency(Transaction.total())
     },
-    clearTransactions(){
+    clearTransactions() {
         DOM.transactionsContainer.innerHTML = ""
     }
 }
 
 const Utils = {
+
     formatCurrency(value) {
         let signal = Number(value) < 0 ? '-' : ''
 
@@ -122,18 +105,90 @@ const Utils = {
 
         return signal + value
 
+    },
+
+    formatAmount(value){
+
+        value = Number(value) * 100
+    
+        return value
+    },
+    formatDate(date){
+        const splittedDate = date.split("-")
+        return `${splittedDate[2]}/${splittedDate[1]}/${splittedDate[0]}`
+    }
+}
+
+const Form = {
+
+    description: document.querySelector('#description'),
+    amount: document.querySelector('#amount'),
+    date: document.querySelector('#date'),
+
+    getValues() {
+        return {
+            description: Form.description.value,
+            amount: Form.amount.value,
+            date: Form.date.value
+        }
+    },
+
+    validateFields() {
+        const { amount, date, description } = Form.getValues()
+
+        if (description.trim() === "" || amount.trim() === "" || date.trim() === "") {
+            throw new Error("Por favor, preencha os campos")
+        }
+
+    },
+    formatValues(){
+
+        let { amount, date, description } = Form.getValues()
+        amount = Utils.formatAmount(amount)
+
+        date = Utils.formatDate(date)
+
+        return {
+            description,
+            date,
+            amount
+        }
+
+    },
+    saveTransaction(transaction){
+        Transaction.add(transaction)
+    },
+    clearFields(){
+        Form.description.value = ""
+        Form.date.value = ""
+        Form.amount.value = ""
+    },
+    submit(event) {
+        event.preventDefault()
+
+        try {
+            Form.validateFields()
+            const transaction = Form.formatValues()
+            Form.saveTransaction(transaction)
+            Form.clearFields()
+            Modal.close()
+            App.reload()
+        }
+        catch (e) {
+            alert(e.message)
+        }
     }
 }
 
 const App = {
-    init(){
+    init() {
         Transaction.all.forEach(transaction => {
             DOM.addTransaction(transaction)
         })
 
         DOM.updateBalance()
     },
-    reload(){
+    reload() {
 
         DOM.clearTransactions()
         App.init()
@@ -142,6 +197,9 @@ const App = {
 }
 
 App.init()
+
+
+
 
 
 
